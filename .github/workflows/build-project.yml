@@ -45,8 +45,23 @@ jobs:
             -n "${{ inputs.app_name }}" \
             -e "${{ inputs.entry_point }}" \
             "${ARGS[@]}"
+      - name: stage artifact
+        shell: bash
+        env:
+          APP_NAME: ${{ inputs.app_name }}
+        run: |
+          DIST_DIR=$(find .build -type d -path "*/dist/${APP_NAME}" 2>/dev/null | head -1)
+          if [ -z "$DIST_DIR" ]; then
+            echo "build output not found"
+            find .build 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p dist-artifact
+          cp -a "$DIST_DIR" "dist-artifact/${APP_NAME}"
+          ls -laR dist-artifact
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.app_name }}-${{ matrix.os }}
-          path: .build/
+          path: dist-artifact/
+          if-no-files-found: error
           retention-days: 30

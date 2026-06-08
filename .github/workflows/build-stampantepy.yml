@@ -32,8 +32,21 @@ jobs:
             --collect-all escpos \
             --data logo.jpg \
             --data logoOspedale.png
+      - name: stage artifact
+        shell: bash
+        run: |
+          DIST_DIR=$(find .build -type d -path "*/dist/stampantepy" 2>/dev/null | head -1)
+          if [ -z "$DIST_DIR" ]; then
+            echo "build output not found"
+            find .build 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p dist-artifact
+          cp -a "$DIST_DIR" dist-artifact/stampantepy
+          ls -laR dist-artifact
       - uses: actions/upload-artifact@v4
         with:
           name: stampantepy-${{ matrix.os }}
-          path: .build/
+          path: dist-artifact/
+          if-no-files-found: error
           retention-days: 30

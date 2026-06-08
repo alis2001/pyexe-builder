@@ -34,8 +34,21 @@ jobs:
           python-version: "3.10"
       - run: python -m pip install -r requirements.txt
       - run: python run.py build examples/hello -n hello -e main.py --hidden-import flask
+      - name: stage artifact
+        shell: bash
+        run: |
+          DIST_DIR=$(find .build -type d -path "*/dist/hello" 2>/dev/null | head -1)
+          if [ -z "$DIST_DIR" ]; then
+            echo "build output not found"
+            find .build 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p dist-artifact
+          cp -a "$DIST_DIR" dist-artifact/hello
+          ls -laR dist-artifact
       - uses: actions/upload-artifact@v4
         with:
           name: hello-${{ matrix.os }}
-          path: .build/
+          path: dist-artifact/
+          if-no-files-found: error
           retention-days: 14
