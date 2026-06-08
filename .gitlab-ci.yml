@@ -1,0 +1,49 @@
+stages:
+  - check
+  - build
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+.check_template: &check_template
+  stage: check
+  script:
+    - python -m pip install -r requirements.txt
+    - python run.py check
+    - python run.py info
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+check builder linux:
+  <<: *check_template
+  tags:
+    - linux
+
+check builder windows:
+  <<: *check_template
+  tags:
+    - windows
+
+.build_template: &build_template
+  stage: build
+  script:
+    - python -m pip install -r requirements.txt
+    - python run.py build .. -n stampantepy -e main.py --hidden-import escpos --hidden-import usb --collect-all escpos --data logo.jpg --data logoOspedale.png
+  artifacts:
+    name: stampantepy-$CI_COMMIT_TAG-$CI_JOB_NAME
+    paths:
+      - .build/
+    expire_in: 90 days
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build stampantepy linux:
+  <<: *build_template
+  tags:
+    - linux
+
+build stampantepy windows:
+  <<: *build_template
+  tags:
+    - windows
